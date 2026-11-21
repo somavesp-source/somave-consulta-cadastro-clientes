@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E8541E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex, nofollow">
+<title>Consulta de Clientes</title>
+<script src="dados/usuarios.js"></script>
+<script src="dados/cnae.js"></script>
+<style>
+  :root { --pri:#E8541E; --pri-d:#c4410f; --bg:#f4f5f7; --card:#fff; --ink:#1d2330; --muted:#6b7280; --line:#e5e7eb;
+          --ok:#0f7a52; --ok-bg:#e6f6ee; --warn:#a35c00; --warn-bg:#fff3df; --err:#b42318; --err-bg:#fdecea; --gray-bg:#eef0f3; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:16px; }
+  .wrap { max-width:520px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .brand { font-weight:800; font-size:20px; letter-spacing:-.3px; }
+  .brand span { color:var(--pri); }
+  .who { font-size:13px; color:var(--muted); text-align:right; }
+  .who button { background:none; border:none; color:var(--pri); font-size:13px; padding:0; cursor:pointer; }
+  .card { background:var(--card); border-radius:16px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,.06); margin-bottom:14px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.sub { margin:0 0 16px; color:var(--muted); font-size:14px; }
+  label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:12px 0 6px; }
+  input { width:100%; font-size:18px; padding:14px; border:1.5px solid var(--line); border-radius:12px; outline:none; background:#fff; }
+  input:focus { border-color:var(--pri); }
+  input.big { font-size:22px; letter-spacing:.5px; text-align:center; font-variant-numeric:tabular-nums; }
+  button.main { width:100%; margin-top:14px; padding:15px; font-size:17px; font-weight:700; color:#fff; background:var(--pri); border:none; border-radius:12px; cursor:pointer; }
+  button.main:active { background:var(--pri-d); }
+  button.main:disabled { opacity:.5; }
+  button.sec { width:100%; margin-top:10px; padding:13px; font-size:15px; font-weight:600; color:var(--pri); background:#fff; border:1.5px solid var(--pri); border-radius:12px; cursor:pointer; }
+  .msg { margin-top:12px; font-size:14px; color:var(--err); min-height:1em; }
+  .result { animation:in .2s ease-out; }
+  @keyframes in { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none; } }
+  .big-ans { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .icon { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:24px; flex:none; }
+  .i-ok { background:var(--ok-bg); color:var(--ok); } .i-no { background:var(--gray-bg); color:var(--muted); } .i-warn { background:var(--warn-bg); color:var(--warn); }
+  .big-ans b { font-size:19px; display:block; } .big-ans small { color:var(--muted); font-size:14px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:15px; }
+  .row span:first-child { color:var(--muted); } .row span:last-child { text-align:right; font-weight:600; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:13px; font-weight:700; }
+  .b-ok { background:var(--ok-bg); color:var(--ok); } .b-warn { background:var(--warn-bg); color:var(--warn); }
+  .b-err { background:var(--err-bg); color:var(--err); } .b-gray { background:var(--gray-bg); color:var(--muted); }
+  .alert { border-radius:12px; padding:10px 12px; font-size:14px; margin-top:10px; }
+  .a-err { background:var(--err-bg); color:var(--err); } .a-warn { background:var(--warn-bg); color:var(--warn); } .a-info { background:#eef4ff; color:#1d4ed8; }
+  .entry + .entry { margin-top:12px; padding-top:4px; border-top:2px dashed var(--line); }
+  .foot { text-align:center; font-size:12px; color:var(--muted); margin-top:18px; }
+  .spin { display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-3px; }
+  .spin.dark { border-color:rgba(232,84,30,.25); border-top-color:var(--pri); }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Somos<span>Foods</span> · Clientes</div>
+    <div class="who hidden" id="who"><div id="whoName"></div><button id="logout" type="button">Sair</button></div>
+  </header>
+
+  <!-- LOGIN -->
+  <section id="vLogin" class="card">
+    <h1>Entrar</h1>
+    <p class="sub">Use o e-mail e a senha que você recebeu.</p>
+    <form id="fLogin" autocomplete="on">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" inputmode="email" autocomplete="username" required>
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" autocomplete="current-password" required>
+      <button class="main" type="submit">Entrar</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+  </section>
+
+  <!-- CONSULTA -->
+  <section id="vApp" class="hidden">
+    <div class="card">
+      <h1>Já é cliente?</h1>
+      <p class="sub">Digite o CNPJ (ou CPF) do cliente que você está visitando.</p>
+      <form id="fBusca">
+        <input id="doc" class="big" inputmode="numeric" autocomplete="off" placeholder="00.000.000/0000-00">
+        <button class="main" type="submit" id="btnBusca">Consultar</button>
+        <div class="msg" id="buscaMsg"></div>
+      </form>
+    </div>
+    <div id="out"></div>
+    <div class="foot" id="foot"></div>
+  </section>
+</div>
+
+<script>
+// ---------- SHA-256 (funciona até abrindo o arquivo direto no celular/PC) ----------
+function sha256(ascii){function r(v,a){return v>>>a|v<<32-a}var m=Math.pow,w=m(2,32),i,j,res='',W=[],L=ascii.length*8,H=sha256.h=sha256.h||[],K=sha256.k=sha256.k||[],pl=K.length,ic={};for(var c=2;pl<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;H[pl]=m(c,.5)*w|0;K[pl++]=m(c,1/3)*w|0}}ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return;W[i>>2]|=j<<(3-i)%4*8}W[W.length]=L/w|0;W[W.length]=L;var h=H.slice(0,8);for(j=0;j<W.length;){var w2=W.slice(j,j+=16),o=h;h=h.slice(0,8);for(i=0;i<64;i++){var w15=w2[i-15],w1=w2[i-2],a=h[0],e=h[4],t1=h[7]+(r(e,6)^r(e,11)^r(e,25))+(e&h[5]^~e&h[6])+K[i]+(w2[i]=i<16?w2[i]:w2[i-16]+(r(w15,7)^r(w15,18)^w15>>>3)+w2[i-7]+(r(w1,17)^r(w1,19)^w1>>>10)|0),t2=(r(a,2)^r(a,13)^r(a,22))+(a&h[1]^a&h[2]^h[1]&h[2]);h=[t1+t2|0].concat(h);h[4]=h[4]+t1|0}for(i=0;i<8;i++)h[i]=h[i]+o[i]|0}for(i=0;i<8;i++)for(j=3;j+1;j--){var b=h[i]>>j*8&255;res+=(b<16?'0':'')+b.toString(16)}return res}
+function utf8(s){return unescape(encodeURIComponent(s))}
+const SAL = 'somos-foods-2026';
+const emb = (t, n=16) => sha256(utf8(SAL + t)).slice(0, n);
+
+const $ = id => document.getElementById(id);
+const dig = s => String(s||'').replace(/\D/g,'');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dataBR = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '—';
+const store = { get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
+
+function cnpjOk(c){ if(!/^\d{14}$/.test(c)||/^(\d)\1+$/.test(c))return false;
+  const f=(b,w)=>{let s=0;for(let i=0;i<w.length;i++)s+=+b[i]*w[i];const r=s%11;return r<2?0:11-r};
+  const w1=[5,4,3,2,9,8,7,6,5,4,3,2],d1=f(c,w1),d2=f(c.slice(0,12)+d1,[6].concat(w1));return c.endsWith(''+d1+d2); }
+function cpfOk(c){ if(!/^\d{11}$/.test(c)||/^(\d)\1+$/.test(c))return false;
+  for(let n=9;n<11;n++){let s=0;for(let i=0;i<n;i++)s+=+c[i]*(n+1-i);if((s*10)%11%10!==+c[n])return false}return true; }
+const fmtCnpj = c => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
+const fmtCpf = c => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
+
+// ---------- Login ----------
+let user = null;
+function showApp(){
+  $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden'); $('who').classList.remove('hidden');
+  $('whoName').textContent = user.n || user.email;
+  loadBase();
+  setTimeout(()=>$('doc').focus(), 50);
+}
+$('fLogin').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('email').value.trim().toLowerCase(), senha = $('senha').value.trim();
+  const u = (window.USUARIOS||{})[emb(email)];
+  if (!u || u.s !== emb(email + '|' + senha, 32)) { $('loginMsg').textContent = 'E-mail ou senha incorretos.'; return; }
+  user = { email, n:u.n, r:u.r }; store.set('sf_user', { email, k:emb(email+'|'+senha,32) });
+  showApp();
+});
+$('logout').addEventListener('click', () => { store.del('sf_user'); location.reload(); });
+(function(){ const s = store.get('sf_user'); if(!s) return; const u=(window.USUARIOS||{})[emb(s.email)];
+  if (u && u.s===s.k) { user={email:s.email,n:u.n,r:u.r}; showApp(); } else store.del('sf_user'); })();
+
+// ---------- Base de clientes (carrega só depois do login) ----------
+let baseReady = null;
+function loadBase(){
+  if (baseReady) return baseReady;
+  baseReady = new Promise((ok, fail) => {
+    const s = document.createElement('script'); s.src = 'dados/clientes.js?v=' + Date.now().toString().slice(0,-5);
+    s.onload = () => { $('foot').textContent = 'Base atualizada em ' + window.BASE.atualizado; ok(); };
+    s.onerror = () => { $('foot').textContent = 'Não foi possível carregar a base.'; fail(); };
+    document.head.appendChild(s);
+  });
+  return baseReady;
+}
+
+// ---------- Máscara ----------
+$('doc').addEventListener('input', e => {
+  let d = dig(e.target.value).slice(0,14), v = d;
+  if (d.length > 11) v = d.replace(/^(\d{2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2}).*/, (m,a,b,c,dd,ee)=>a+(b?'.'+b:'')+(c?'.'+c:'')+(dd?'/'+dd:'')+(ee?'-'+ee:''));
+  else if (d.length > 3) v = d.replace(/^(\d{3})(\d{0,3})(\d{0,3})(\d{0,2}).*/, (m,a,b,c,dd)=>a+(b?'.'+b:'')+(c?'.'+c:'')+(dd?'-'+dd:''));
+  e.target.value = v; $('buscaMsg').textContent = '';
+});
+
+// ---------- Consulta ----------
+const STATUS_CLS = ['b-ok','b-warn','b-warn','b-warn','b-err','b-gray','b-gray'];
+$('fBusca').addEventListener('submit', async e => {
+  e.preventDefault();
+  const d = dig($('doc').value); let key, tipo, fmt;
+  if (d.length === 14 && cnpjOk(d)) { key=d; tipo='CNPJ'; fmt=fmtCnpj(d); }
+  else if (d.length === 11 && cpfOk(d)) { key=d.padStart(14,'0'); tipo='CPF'; fmt=fmtCpf(d); }
+  else { $('buscaMsg').textContent = d.length ? 'CNPJ/CPF inválido. Confira os números.' : 'Digite o CNPJ ou CPF.'; return; }
+  $('btnBusca').innerHTML = '<span class="spin"></span>';
+  try { await loadBase(); } catch(err) { $('btnBusca').textContent='Consultar'; return; }
+  $('btnBusca').textContent = 'Consultar';
+  const hits = window.BASE.c[emb(key)];
+  $('out').innerHTML = hits ? cardCliente(fmt, tipo, hits) : cardNovo(fmt, tipo, key);
+  const bt = $('btnReceita'); if (bt) bt.addEventListener('click', () => receita(key));
+  $('out').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function cardCliente(fmt, tipo, hits){
+  const S = window.BASE.status;
+  const ativo = hits.some(h => h[1] === 0);
+  const head = `<div class="big-ans"><div class="icon ${ativo?'i-ok':'i-warn'}">${ativo?'✓':'!'}</div>
+    <div><b>Já é cliente</b><small>${tipo} ${fmt}${hits.length>1?` · ${hits.length} cadastros`:''}</small></div></div>`;
+  const body = hits.map(([cod, st, rep, ult, bloq]) => {
+    const meu = user.r && String(rep) === String(user.r);
+    return `<div class="entry">
+      <div class="row"><span>Código</span><span>${cod}</span></div>
+      <div class="row"><span>Status</span><span><span class="badge ${STATUS_CLS[st]||'b-gray'}">${esc(S[st])}</span></span></div>
+      <div class="row"><span>Última compra</span><span>${dataBR(ult)}</span></div>
+      <div class="row"><span>Representante</span><span>${rep===''?'—':rep}${meu?' (você)':''}</span></div>
+      ${bloq?'<div class="alert a-err">Cadastro <b>bloqueado</b>. Fale com o financeiro antes de vender.</div>':''}
+    </div>`; }).join('');
+  const dica = ativo ? '' : '<div class="alert a-warn">Cliente cadastrado, mas sem compra recente. Não precisa de novo cadastro: fale com o comercial para reativar.</div>';
+  return `<div class="card result">${head}${body}${dica}</div>`;
+}
+
+function cardNovo(fmt, tipo, key){
+  return `<div class="card result"><div class="big-ans"><div class="icon i-no">＋</div>
+    <div><b>Não é cliente</b><small>${tipo} ${fmt} não está na base</small></div></div>
+    ${tipo==='CNPJ' ? '<button class="sec" id="btnReceita" type="button">Ver dados na Receita</button><div id="rec"></div>'
+                    : '<div class="alert a-info">Para CPF não há consulta na Receita. Siga o processo de cadastro de pessoa física.</div>'}
+  </div>`;
+}
+
+function ramoSugerido(d){
+  const C = window.CNAE; if (!C || !d.cnae_fiscal) return null;
+  const cn = String(d.cnae_fiscal).padStart(7,'0');
+  let r = C.tab[cn] ?? C.div[cn.slice(0,2)] ?? 901;
+  const nome = ((d.razao_social||'') + ' ' + (d.nome_fantasia||'')).toUpperCase();
+  if ([301,311,341,351,361,381].includes(r)) { if (nome.includes('PIZZ')) r = 321; else if (/BURG|HAMB/.test(nome)) r = 331; }
+  const filial = String(d.cnpj||'').slice(8,12) !== '0001';
+  if (filial && C.ramos[r]) r = C.ramos[r][1];
+  return { cod:r, nome:(C.ramos[r]||['?'])[0], filial };
+}
+
+async function receita(cnpj){
+  const box = $('rec'); $('btnReceita').classList.add('hidden');
+  box.innerHTML = '<div style="text-align:center;padding:16px"><span class="spin dark"></span></div>';
+  let d;
+  try {
+    const r = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + cnpj);
+    if (r.status === 404) { box.innerHTML = '<div class="alert a-err">CNPJ não encontrado na Receita.</div>'; return; }
+    if (!r.ok) throw new Error(r.status);
+    d = await r.json();
+  } catch(e) { box.innerHTML = '<div class="alert a-warn">Não foi possível consultar a Receita agora. Tente de novo em instantes.</div><button class="sec" type="button" onclick="receita(\''+cnpj+'\')">Tentar de novo</button>'; return; }
+  const sit = d.descricao_situacao_cadastral || '';
+  const abertura = d.data_inicio_atividade || '';
+  const meses = abertura ? (Date.now() - new Date(abertura)) / (30.44*864e5) : 99;
+  const end = [ [d.descricao_tipo_de_logradouro, d.logradouro].filter(Boolean).join(' '), d.numero, d.complemento ].filter(Boolean).join(', ');
+  const cnae = d.cnae_fiscal ? String(d.cnae_fiscal).padStart(7,'0').replace(/^(\d{4})(\d)(\d{2})$/,'$1-$2/$3') : '';
+  const ramo = ramoSugerido(d);
+  const alerts = [];
+  if (sit && sit !== 'ATIVA') alerts.push(`<div class="alert a-err">Situação na Receita: <b>${esc(sit)}</b>. Não pode ser cadastrado.</div>`);
+  if (meses < 6) alerts.push(`<div class="alert a-warn">Empresa aberta há menos de 6 meses (${dataBR(abertura)}).</div>`);
+  if (d.opcao_pelo_mei) alerts.push('<div class="alert a-info">Empresa MEI.</div>');
+  box.innerHTML = `${alerts.join('')}
+    <div class="row" style="margin-top:10px"><span>Razão social</span><span>${esc(d.razao_social)}</span></div>
+    ${d.nome_fantasia?`<div class="row"><span>Fantasia</span><span>${esc(d.nome_fantasia)}</span></div>`:''}
+    <div class="row"><span>Situação</span><span>${esc(sit)}</span></div>
+    <div class="row"><span>Abertura</span><span>${dataBR(abertura)}</span></div>
+    <div class="row"><span>Endereço</span><span>${esc(end)}<br>${esc(d.bairro)} · ${esc(d.municipio)}/${esc(d.uf)}</span></div>
+    <div class="row"><span>CNAE</span><span>${cnae}<br><small style="font-weight:400;color:var(--muted)">${esc(d.cnae_fiscal_descricao)}</small></span></div>
+    ${ramo?`<div class="row"><span>Ramo sugerido</span><span>${ramo.cod} - ${esc(ramo.nome)}${ramo.filial?'<br><small style="font-weight:400;color:var(--muted)">filial = rede</small>':''}</span></div>`:''}
+    <button class="main" type="button" disabled>Enviar ficha de cadastro (em breve)</button>`;
+}
+</script>
+</body>
+</html>
